@@ -4,23 +4,33 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+
 public class Main {
     static Scanner scanner = new Scanner(System.in);
-    static List<Person> personList = new ArrayList<>();
+    static List<Record> recordList = new ArrayList<>();
+
 
     public static void main(String[] args) {
         while (true) {
             System.out.println("Enter command ('help' for help):");
             String cmd = scanner.next();
             switch (cmd) {
-                case "create":
-                    create();
+                case "createPerson":
+                case "cp":
+                    createPerson();
+                    break;
+                case "createNote":
+                case "cn":
+                    createNote();
                     break;
                 case "list":
                     printList();
                     break;
                 case "remove":
                     removeById();
+                    break;
+                case "find":
+                    find();
                     break;
                 case "help":
                     showHelp();
@@ -33,20 +43,39 @@ public class Main {
         }
     }
 
+    private static void createNote() {
+        System.out.println("Enter text");
+        String txt = askString();
+        Note note = new Note();
+        note.setText(txt);
+        recordList.add(note);
+        System.out.println(note);
+    }
+
+    private static void find() {
+        System.out.println("Find what?");
+        String str = askString();
+        for (Record r : recordList) {
+            if (r.hasSubstring(str)){
+                System.out.println(r);
+            }
+        }
+    }
+
     private static void showHelp() {
-        System.out.println("create - bla bla bla bla");
+        System.out.println("createPerson - bla bla bla bla");
         System.out.println("remove - bla bla bla bla");
-        System.out.println("bla bla bla bla");
+        System.out.println("list - bla bla bla bla");
         System.out.println("bla bla bla bla");
     }
 
     private static void removeById() {
         System.out.println("Enter ID to remove:");
         int id = scanner.nextInt();
-        for (int i = 0; i < personList.size(); i++) {
-            Person p = personList.get(i);
+        for (int i = 0; i < recordList.size(); i++) {
+            Record p = recordList.get(i);
             if (id == p.getId()) {
-                personList.remove(i);
+                recordList.remove(i);
                 break;
             }
         }
@@ -55,21 +84,21 @@ public class Main {
 //    private static void removeById() {
 //        System.out.println("Enter ID to remove:");
 //        int id = scanner.nextInt();
-//        for (Person p : personList) {
+//        for (Person p : recordList) {
 //            if (id == p.getId()) {
-//                personList.remove(p); // not very optimal
+//                recordList.remove(p); // not very optimal
 //                break;
 //            }
 //        }
 //    }
 
     private static void printList() {
-        for (Person p : personList) {
+        for (Record p : recordList) {
             System.out.println(p);
         }
     }
 
-    private static void create() {
+    private static void createPerson() {
         System.out.println("Enter name:");
         String name = askString();
 
@@ -88,7 +117,7 @@ public class Main {
         p.setPhone(phone);
         p.setEmail(email);
 
-        personList.add(p);
+        recordList.add(p);
 
         System.out.println(p);
     }
