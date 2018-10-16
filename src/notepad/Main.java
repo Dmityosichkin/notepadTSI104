@@ -1,48 +1,58 @@
 package notepad;
 
-import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
-
+import java.util.*;
 
 public class Main {
     public final static String DATE_FORMAT = "dd.MM.yyyy";
-    public final static DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern(DATE_FORMAT);
-    static Scanner scanner = new Scanner(System.in);
-    static List<Record> recordList = new ArrayList<>();
+    public final static DateTimeFormatter DATE_FORMATTER
+            = DateTimeFormatter.ofPattern(DATE_FORMAT);
     public final static String TIME_FORMAT = "HH:mm";
-    public final static DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern(TIME_FORMAT);
+    public final static DateTimeFormatter TIME_FORMATTER
+            = DateTimeFormatter.ofPattern(TIME_FORMAT);
 
+    private static Scanner scanner = new Scanner(System.in);
+    private static Map<Integer, Record> recordList = new LinkedHashMap<>();
 
     public static void main(String[] args) {
         while (true) {
             System.out.println("Enter command ('help' for help):");
             String cmd = scanner.next();
             switch (cmd) {
-                case "createPerson":
+                case "createperson":
                 case "cp":
                     createPerson();
                     break;
-                case "createNote":
+                case "createnote":
                 case "cn":
                     createNote();
+                    break;
+                case "expired":
+                case "ex":
+                    showExpired();
+                    break;
+                case "createreminder":
+                case "cr":
+                    createReminder();
+                    break;
+                case "createalarm":
+                case "ca":
+                    createAlarm();
                     break;
                 case "list":
                     printList();
                     break;
-                case "createReminder":
-                case "cr":
-                    createReminder();
-                    break;
                 case "remove":
+                case"rm":
                     removeById();
                     break;
                 case "find":
                     find();
+                    break;
+                case "show":
+                    showById();
                     break;
                 case "help":
                     showHelp();
@@ -55,11 +65,42 @@ public class Main {
         }
     }
 
+    private static void showExpired() {
+        for (Record r: recordList.values()){
+            if (r instanceof Expirable) {
+                Expirable e = (Expirable) r;
+                if (e.isExpired()) {
+                    System.out.println(r);
+                }
+            }
+        }
+    }
+
+    private static void createAlarm() {
+        var alarm = new Alarm();
+        addRecord(alarm);
+    }
+
+    private static void showById() {
+        System.out.println("Enter an ID");
+        int id = askInt();
+        Record record = recordList.get(id);
+        System.out.println(record);
+    }
 
     private static void createReminder() {
-
         var reminder = new Reminder();
         addRecord(reminder);
+    }
+
+    private static void find() {
+        System.out.println("Find what?");
+        String str = askString();
+        for (Record r : recordList.values()) {
+            if (r.hasSubstring(str)) {
+                System.out.println(r);
+            }
+        }
     }
 
     private static void createNote() {
@@ -67,41 +108,39 @@ public class Main {
         addRecord(note);
     }
 
-    private static void find() {
-        System.out.println("Find what?");
-        String str = askString();
-        for (Record r : recordList) {
-            if (r.hasSubstring(str)) {
-                System.out.println(r);
-            }
-        }
-    }
-
     private static void showHelp() {
-        System.out.println("createPerson - bla bla bla bla");
-        System.out.println("remove - remove by ID");
-        System.out.println("find - bla bla bla bla");
-        System.out.println("createReminder - bla bla bla bla");
-        System.out.println("createNote - bla bla bla bla");
-        System.out.println("list - bla bla bla bla");
-        System.out.println("exit - bla bla bla bla");
+        System.out.println("list - ");
+        System.out.println("remove - rm");
+        System.out.println("createperson - cp");
+        System.out.println("createnote - cn");
+        System.out.println("expired- ex");
+        System.out.println("createreminder - cr");
+        System.out.println("createalarm - ca");
+        System.out.println("find");
+        System.out.println("show");
+        System.out.println("exit");
     }
 
     private static void removeById() {
         System.out.println("Enter ID to remove:");
-        int id = scanner.nextInt();
-        for (int i = 0; i < recordList.size(); i++) {
-            Record p = recordList.get(i);
-            if (id == p.getId()) {
-                recordList.remove(i);
-                break;
+        int id = askInt();
+        recordList.remove(id);
+    }
+
+    private static int askInt() {
+        while (true) {
+            try {
+                return scanner.nextInt();
+            } catch (InputMismatchException e) {
+                scanner.next(); // skip wrong input
+                System.out.println("It isn't a number");
             }
         }
     }
 
 
     private static void printList() {
-        for (Record p : recordList) {
+        for (Record p : recordList.values()) {
             System.out.println(p);
         }
     }
@@ -113,7 +152,8 @@ public class Main {
 
     private static void addRecord(Record p) {
         p.askQuestions();
-        recordList.add(p);
+        recordList.put(p.getId(), p);
+        System.out.println("You have created this record:");
         System.out.println(p);
     }
 
@@ -125,13 +165,36 @@ public class Main {
             do {
                 result.add(word);
                 if (word.endsWith("\"")) {
-                    return String.join(" ", result);
+                    String str = String.join(" ", result);
+                    return str.substring(1, str.length() - 1);
                 }
                 word = scanner.next();
             } while (true);
 
         } else {
             return word;
+        }
+
+    }
+
+    // More advanced phone validation Ļ(but still should be treated as an example)
+    public static String askPhone() {
+        while (true) {
+            String phone = askString();
+            // checking if there any characters expect digits, spaces, pluses and dashes
+            if (phone.chars().anyMatch(c -> !Character.isDigit(c) && c != ' ' && c != '+' && c != '-')) {
+                System.out.println("Only digits, spaces, plus and dash are allowed!");
+                continue;
+            }
+
+            // checking how many digits in the entered number (excluding spaces and other non-digits)
+            if (phone.chars().filter(Character::isDigit).count() < 5) {
+                System.out.println("At least 5 digits in phone number");
+                continue;
+            }
+
+            // validation passed
+            return phone;
         }
     }
 
@@ -143,7 +206,7 @@ public class Main {
 
     public static LocalTime askTime() {
         String t = askString();
-        LocalTime time = LocalTime.parse(t, DATE_FORMATTER);
+        LocalTime time = LocalTime.parse(t, TIME_FORMATTER);
         return time;
     }
 }
